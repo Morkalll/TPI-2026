@@ -1,1 +1,5 @@
-# TPI-2026
+# Integrantes
+- Smolarz, Darek
+- Di Stasi, Giuliano
+- Boffa, Tomás
+- Anfuso, Tobías
