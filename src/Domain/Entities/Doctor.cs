@@ -18,5 +18,5 @@ public class Doctor : User
     public Doctor() { Role = UserRole.Doctor; }
 }
 
-}
-  
+
+
