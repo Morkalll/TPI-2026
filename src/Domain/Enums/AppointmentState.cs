@@ -1,6 +1,6 @@
 namespace Domain.Enums;
 
-public enum TurnState
+public enum AppointmentState
 {
     Pending,
     Confirmed,
