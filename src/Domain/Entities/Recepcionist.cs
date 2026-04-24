@@ -1,6 +1,6 @@
 using Domain.Enums;
 
-namespace Domain.Entities;
+namespace TPI_2026.Domain.Entities;
 
 public class Recepcionist : User
 {
