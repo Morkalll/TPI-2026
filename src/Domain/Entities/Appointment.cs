@@ -15,9 +15,9 @@ public class Appointment : BaseEntity
     public AppointmentState State { get; private set; } = AppointmentState.Pending;
 
     // Navigation
-    public Patient? Paciente { get; set; }
+    public Patient? Patient { get; set; }
     public Doctor? Doctor { get; set; }
-    public Room? Consultorio { get; set; }
+    public Room? Room { get; set; }
     public MedicalHistory? MedicalHistory { get; set; }
 
     private Appointment() { }

@@ -16,8 +16,8 @@ public class Patient : User
     como los turnos y los historiales medicos 
     (revisar la privacidad de metodos get y set)
     */
-    public ICollection<AppointmentState> Appointments { get; private set; } = [];
-    public ICollection<MedicalHistory> Histories { get; private set; } = [];
+    public ICollection<Appointment> Appointments { get; private set; } = [];
+    public ICollection<MedicalHistory> MedicalHistories { get; private set; } = [];
 
     public Patient() { Role = UserRole.Patient; }
 }
