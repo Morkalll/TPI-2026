@@ -1,4 +1,6 @@
+using TPI_2026.Infrastructure;
 using TPI_2026.Infrastructure.Data;
+using TPI_2026.Web.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +27,7 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseCors(static builder => 
+app.UseCors(static builder =>
     builder.AllowAnyMethod()
         .AllowAnyHeader()
         .AllowAnyOrigin());
