@@ -1,55 +1,57 @@
 ﻿using TPI_2026.Application.Common.Interfaces;
+using TPI_2026.Domain.Entities;
 using TPI_2026.Infrastructure.Data;
-using TPI_2026.Infrastructure.Data.Interceptors;
 using TPI_2026.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
 
-namespace Microsoft.Extensions.DependencyInjection;
+namespace TPI_2026.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static void AddInfrastructureServices(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddInfrastructureServices(this IHostApplicationBuilder builder)
     {
-        var connectionString = builder.Configuration.GetConnectionString(Services.Database);
-        Guard.Against.Null(connectionString, message: $"Connection string '{Services.Database}' not found.");
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? "Data Source=hospital.db";
 
-        builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
-        builder.Services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
+        builder.Services.AddDbContext<ApplicationDbContext>
+        (
+            options => options.UseSqlite(connectionString)
+        );
 
-        builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
-        {
-            options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
-            options.UseSqlite(connectionString);
-            options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
-        });
-
-
-        builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        builder.Services.AddScoped<IApplicationDbContext>
+        (
+            provider => provider.GetRequiredService<ApplicationDbContext>()
+        );
 
         builder.Services.AddScoped<ApplicationDbContextInitialiser>();
 
-        builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-            })
-            .AddIdentityCookies();
+        builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-        builder.Services.AddAuthorizationBuilder();
+        builder.Services.AddTransient<IEmailSender<ApplicationUser>, NoOpEmailSender>();
 
-        builder.Services
-            .AddIdentityCore<ApplicationUser>()
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddSignInManager()
-            .AddDefaultTokenProviders()
-            .AddApiEndpoints();
+        return builder;
+    }
+}
 
-        builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddTransient<IIdentityService, IdentityService>();
+public class NoOpEmailSender : IEmailSender<ApplicationUser>
+{
+    public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
+    {
+        return Task.CompletedTask;
     }
 }

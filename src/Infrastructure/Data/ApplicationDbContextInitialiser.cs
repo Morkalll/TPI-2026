@@ -1,53 +1,27 @@
-﻿using TPI_2026.Domain.Constants;
-using TPI_2026.Domain.Entities;
-using TPI_2026.Domain.ValueObjects;
-using TPI_2026.Infrastructure.Identity;
-using Microsoft.AspNetCore.Builder;
+﻿using TPI_2026.Domain.Entities;
+using TPI_2026.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace TPI_2026.Infrastructure.Data;
 
-public static class InitialiserExtensions
-{
-    public static async Task InitialiseDatabaseAsync(this WebApplication app)
-    {
-        using var scope = app.Services.CreateScope();
-
-        var initialiser = scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
-
-        await initialiser.InitialiseAsync();
-        await initialiser.SeedAsync();
-    }
-}
-
 public class ApplicationDbContextInitialiser
+(
+    ILogger<ApplicationDbContextInitialiser> logger,
+    ApplicationDbContext context
+)
+
 {
-    private readonly ILogger<ApplicationDbContextInitialiser> _logger;
-    private readonly ApplicationDbContext _context;
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
-
-    public ApplicationDbContextInitialiser(ILogger<ApplicationDbContextInitialiser> logger, ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
-    {
-        _logger = logger;
-        _context = context;
-        _userManager = userManager;
-        _roleManager = roleManager;
-    }
-
     public async Task InitialiseAsync()
     {
         try
         {
-            // See https://jasontaylor.dev/ef-core-database-initialisation-strategies
-            await _context.Database.EnsureDeletedAsync();
-            await _context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "An error occurred while initialising the database.");
+            logger.LogError(exception, "Error al migrar la base de datos.");
             throw;
         }
     }
@@ -58,53 +32,27 @@ public class ApplicationDbContextInitialiser
         {
             await TrySeedAsync();
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "An error occurred while seeding the database.");
+            logger.LogError(exception, "Error al sembrar datos iniciales.");
             throw;
         }
     }
 
-    public async Task TrySeedAsync()
+    private async Task TrySeedAsync()
     {
-        // Default roles
-        var administratorRole = new IdentityRole(Roles.Administrator);
-
-        if (_roleManager.Roles.All(r => r.Name != administratorRole.Name))
+        if (!context.Administrators.Any())
         {
-            await _roleManager.CreateAsync(administratorRole);
-        }
-
-        // Default users
-        var administrator = new ApplicationUser { UserName = "administrator@localhost", Email = "administrator@localhost" };
-
-        if (_userManager.Users.All(u => u.UserName != administrator.UserName))
-        {
-            await _userManager.CreateAsync(administrator, "Administrator1!");
-            if (!string.IsNullOrWhiteSpace(administratorRole.Name))
+            var admin = new Administrator
             {
-                await _userManager.AddToRolesAsync(administrator, new [] { administratorRole.Name });
-            }
-        }
+                Name = "Admin",
+                Email = "admin@hospital.com",
+                Password = "Admin1234!"
+            };
 
-        // Default data
-        // Seed, if necessary
-        if (!_context.TodoLists.Any())
-        {
-            _context.TodoLists.Add(new TodoList
-            {
-                Title = "Tasks",
-                Colour = Colour.Green,
-                Items =
-                {
-                    new TodoItem { Title = "Make a todo list 📃" },
-                    new TodoItem { Title = "Check off the first item ✅" },
-                    new TodoItem { Title = "Realise you've already done two things on the list! 🤯"},
-                    new TodoItem { Title = "Reward yourself with a nice, long nap 🏆" },
-                }
-            });
-
-            await _context.SaveChangesAsync();
+            context.Administrators.Add(admin);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Admin inicial creado.");
         }
     }
 }
