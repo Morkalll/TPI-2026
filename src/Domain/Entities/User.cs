@@ -1,7 +1,7 @@
-using Domain.Common;
+using TPI_2026.Domain.Common;
 using Domain.Enums;
 
-namespace Domain.Entities;
+namespace TPI_2026.Domain.Entities;
 
 public abstract class User : BaseEntity
 {
